@@ -1,29 +1,109 @@
-import Image from "next/image";
-const shop = {
-  name: "MOKU COFFEE",
-  slogan: "一杯咖啡，留一點時間給自己。",
-  description:
-    "位於台北巷弄裡的小咖啡店。提供手沖咖啡、甜點與一個可以慢下來的空間。",
+"use client";
 
-  address: "台北市中山區咖啡街 88 號",
-  hours: "週一至週日 10:00 - 20:00",
-  phone: "02-1234-5678",
+import Image from "next/image";
+import { useEffect, useState } from "react";
+import { supabase } from "./lib/supabase";
+const shop = {
+  name: "NULO CLEAN",
+  slogan: "讓你喜歡的鞋，重新乾淨一次。",
+  description:
+    "球鞋清潔與保養服務。日常髒污、深層清潔、麂皮鞋款，依照不同材質使用適合的方式處理。",
+
+  address: "台北｜可私訊詢問收送方式",
+  hours: "預約制",
+  phone: "",
 
   instagram: "https://instagram.com/",
   line: "https://line.me/",
 
-  image: "/coffee.png",
+  image: "/nulo-clean.png.png",
+
   menu: [
-  ["美式咖啡", "Americano", "NT$100"],
-  ["拿鐵", "Cafe Latte", "NT$130"],
-  ["手沖咖啡", "Pour Over", "NT$150"],
-  ["抹茶拿鐵", "Matcha Latte", "NT$140"],
-  ["巴斯克乳酪蛋糕", "Basque Cheesecake", "NT$160"],
-  ["提拉米蘇", "Tiramisu", "NT$170"],
-],
+    ["基礎清潔", "Basic Cleaning", "NT$380"],
+    ["深層清潔", "Deep Cleaning", "NT$500"],
+    ["麂皮清潔", "Suede Cleaning", "NT$800"],
+    ["鞋底清潔", "Sole Cleaning", "NT$300"],
+    ["局部處理", "Spot Treatment", "私訊報價"],
+    ["特殊鞋款", "Special Shoes", "私訊報價"],
+  ],
 };
 
 export default function Home() {
+  const [products, setProducts] = useState<any[]>([]);
+ const [booking, setBooking] = useState({
+    name: "",
+    phone: "",
+    shoes: "",
+    service: "",
+    note: "",
+  });
+  useEffect(() => {
+  const fetchProducts = async () => {
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("讀取商品失敗：", error);
+      return;
+    }
+
+    setProducts(data || []);
+  };
+
+  fetchProducts();
+}, []);
+   const handleBooking = async () => {
+  if (
+    !booking.name ||
+    !booking.phone ||
+    !booking.shoes ||
+    !booking.service
+  ) {
+    alert("請填寫姓名、電話、鞋款與清潔項目。");
+    return;
+  }
+
+  const phoneRegex = /^09\d{8}$/;
+
+  if (!phoneRegex.test(booking.phone)) {
+    alert("請輸入正確的手機號碼，例如 0912345678。");
+    return;
+  }
+
+  const { error } = await supabase
+    .from("bookings")
+    .insert([
+      {
+        name: booking.name,
+        phone: booking.phone,
+        shoes: booking.shoes,
+        service: booking.service,
+        note: booking.note,
+      },
+    ]);
+
+  if (error) {
+    console.error("預約送出失敗：", error);
+    alert("預約送出失敗，請稍後再試。");
+    return;
+  }
+
+  alert("預約送出成功！我們收到資料後會再與你聯絡。");
+
+  setBooking({
+    name: "",
+    phone: "",
+    shoes: "",
+    service: "",
+    note: "",
+  });
+};
+
+ 
+
+
   return (
     <main className="min-h-screen bg-[#111111] text-white">
       {/* 導覽列 */}
@@ -33,11 +113,11 @@ export default function Home() {
         </h1>
 
         <a
-          href="#contact"
-          className="rounded-full border border-white/30 px-5 py-2 text-sm"
-        >
-          聯絡我們
-        </a>
+  href="#booking"
+  className="rounded-full border border-white/30 px-5 py-2 text-sm transition hover:bg-white hover:text-black"
+>
+  立即預約
+</a>
       </header>
 
       {/* 首頁主視覺 */}
@@ -46,7 +126,7 @@ export default function Home() {
         {/* 左邊文字 */}
         <div>
           <p className="mb-4 text-sm tracking-[0.3em] text-zinc-400">
-            TAIPEI · COFFEE · DAILY
+            TAIPEI · SNEAKER · CARE
           </p>
 
           <h2 className="text-4xl font-bold leading-tight md:text-6xl">
@@ -62,7 +142,7 @@ export default function Home() {
               href="#menu"
               className="rounded-full bg-white px-6 py-3 font-medium text-black"
             >
-              查看菜單
+              查看服務
             </a>
 
             <a
@@ -87,6 +167,47 @@ export default function Home() {
         </div>
 
       </section>
+       {/* 清潔服務形象 */}
+<section className="border-t border-white/10 px-6 py-20 md:px-12">
+  <div className="mx-auto grid max-w-6xl items-center gap-12 md:grid-cols-2">
+
+    <div className="relative aspect-[4/3] overflow-hidden rounded-3xl">
+      <Image
+        src="/nulo-clean-service.png.png"
+        alt="NULO CLEAN 球鞋清潔服務"
+        fill
+        className="object-cover"
+      />
+    </div>
+
+    <div>
+      <p className="text-sm tracking-[0.3em] text-zinc-500">
+        PROFESSIONAL SHOE CARE
+      </p>
+
+      <h2 className="mt-4 text-4xl font-bold md:text-5xl">
+        不只是洗乾淨，
+        <br />
+        而是把鞋好好整理一次。
+      </h2>
+
+      <p className="mt-6 leading-8 text-zinc-400">
+        依照不同鞋款、材質與髒污狀況，
+        選擇適合的清潔方式。
+        從日常清潔、深層清潔到麂皮鞋款，
+        每一雙鞋都個別處理。
+      </p>
+
+      <a
+        href="#menu"
+        className="mt-8 inline-block rounded-full border border-white/30 px-6 py-3 text-sm transition hover:bg-white hover:text-black"
+      >
+        查看清潔項目
+      </a>
+    </div>
+
+  </div>
+</section>
        {/* 招牌菜單 */}
       <section
         id="menu"
@@ -94,15 +215,15 @@ export default function Home() {
       >
         <div className="mx-auto max-w-6xl">
           <p className="text-sm tracking-[0.3em] text-zinc-500">
-            OUR MENU
+            OUR SERVICES
           </p>
 
           <h3 className="mt-3 text-3xl font-bold md:text-5xl">
-            招牌菜單
+            清潔服務
           </h3>
 
           <p className="mt-4 max-w-xl leading-7 text-zinc-400">
-            簡單的咖啡、甜點，適合日常停留的味道。
+            依照鞋款材質與髒污程度，提供適合的清潔與保養方式。
           </p>
 
           <div className="mt-12 grid gap-4 md:grid-cols-2">
@@ -128,6 +249,58 @@ export default function Home() {
           </div>
         </div>
       </section>
+      {/* 商品區 */}
+<section className="border-t border-white/10 px-6 py-20 md:px-12">
+  <div className="mx-auto max-w-6xl">
+    <p className="text-sm tracking-[0.3em] text-zinc-500">
+      PRODUCTS
+    </p>
+
+    <h2 className="mt-3 text-3xl font-bold md:text-5xl">
+      商品
+    </h2>
+
+    <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {products.map((product) => (
+        <a
+          key={product.id}
+          href={`/products/${product.id}`}
+          className="block overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] transition hover:-translate-y-1 hover:border-white/30"
+        >
+          {product.image && (
+            <div className="relative aspect-square">
+              <Image
+                src={product.image}
+                alt={product.name}
+                fill
+                sizes="(max-width: 768px) 100vw, 33vw"
+                className="object-cover"
+              />
+            </div>
+          )}
+
+          <div className="p-6">
+            <h3 className="text-xl font-bold">
+              {product.name}
+            </h3>
+
+            <p className="mt-2 text-zinc-400">
+              尺寸：{product.size || "未填寫"}
+            </p>
+
+            <p className="mt-4 text-lg font-bold">
+              NT$ {product.price}
+            </p>
+
+            <p className="mt-2 text-sm text-zinc-500">
+              庫存：{product.stock}
+            </p>
+          </div>
+        </a>
+      ))}
+    </div>
+  </div>
+</section>
          {/* 店家資訊 */}
       <section
         id="contact"
@@ -202,6 +375,94 @@ export default function Home() {
           </div>
         </div>
       </section>
+      {/* 預約清潔 */}
+<section
+  id="booking"
+  className="border-t border-white/10 px-6 py-20 md:px-12"
+>
+  <div className="mx-auto max-w-3xl">
+    <p className="text-sm tracking-[0.3em] text-zinc-500">
+      BOOKING
+    </p>
+
+    <h2 className="mt-3 text-3xl font-bold md:text-5xl">
+      預約清潔
+    </h2>
+
+    <p className="mt-4 leading-7 text-zinc-400">
+      填寫基本資料與鞋款狀況，我們會再與你確認清潔方式與報價。
+    </p>
+
+    <form className="mt-10 grid gap-5">
+      <input
+  type="text"
+  placeholder="姓名"
+  value={booking.name}
+  onChange={(e) =>
+    setBooking({ ...booking, name: e.target.value })
+  }
+  className="rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 outline-none placeholder:text-zinc-600"
+/>
+
+        <input
+  type="tel"
+  placeholder="電話"
+  value={booking.phone}
+  onChange={(e) =>
+    setBooking({ ...booking, phone: e.target.value })
+  }
+  className="rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 outline-none placeholder:text-zinc-600"
+/>
+
+      <input
+  type="text"
+  placeholder="鞋款，例如 Air Jordan 1"
+  value={booking.shoes}
+  onChange={(e) =>
+    setBooking({ ...booking, shoes: e.target.value })
+  }
+  className="rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 outline-none placeholder:text-zinc-600"
+/>
+
+      <select
+  value={booking.service}
+  onChange={(e) =>
+    setBooking({ ...booking, service: e.target.value })
+  }
+  className="rounded-2xl border border-white/10 bg-[#171717] px-5 py-4 outline-none"
+>
+
+        <option value="" disabled>
+          選擇清潔項目
+        </option>
+        <option>基礎清潔</option>
+        <option>深層清潔</option>
+        <option>麂皮清潔</option>
+        <option>鞋底清潔</option>
+        <option>局部處理</option>
+        <option>特殊鞋款</option>
+      </select>
+
+      <textarea
+  placeholder="備註，例如：鞋面有油漬、泛黃、麂皮掉色..."
+  rows={5}
+  value={booking.note}
+  onChange={(e) =>
+    setBooking({ ...booking, note: e.target.value })
+  }
+  className="rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 outline-none placeholder:text-zinc-600"
+/>
+
+      <button
+        type="button"
+        onClick={handleBooking}
+        className="mt-2 rounded-full bg-white px-6 py-4 font-medium text-black transition hover:bg-zinc-200"
+      >
+        送出預約
+      </button>
+    </form>
+  </div>
+</section>
     </main>
   );
-}
+  }
