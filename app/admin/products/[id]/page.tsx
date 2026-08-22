@@ -4,6 +4,13 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 
+type Variant = {
+  id?: number;
+  color: string;
+  size: string;
+  stock: string;
+};
+
 export default function EditProductPage() {
   const params = useParams();
   const id = Number(params.id);
@@ -15,11 +22,13 @@ export default function EditProductPage() {
   const [form, setForm] = useState({
     name: "",
     price: "",
+    category: "鞋類",
     size: "",
     stock: "",
     image: "",
     description: "",
   });
+  const [variants, setVariants] = useState<Variant[]>([]);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -39,11 +48,38 @@ export default function EditProductPage() {
       setForm({
         name: data.name || "",
         price: String(data.price ?? ""),
+        category: data.category || "鞋類",
         size: data.size || "",
         stock: String(data.stock ?? ""),
         image: data.image || "",
         description: data.description || "",
       });
+
+      const { data: variantData, error: variantsError } = await supabase
+        .from("product_variants")
+        .select("id, color, size, stock")
+        .eq("product_id", id)
+        .order("id", { ascending: true });
+
+      if (variantsError) {
+        console.error("Supabase product_variants select error:", {
+          error: variantsError,
+          message: variantsError.message,
+          details: variantsError.details,
+          hint: variantsError.hint,
+          code: variantsError.code,
+        });
+        alert(`讀取商品規格失敗：${variantsError.message}`);
+      } else {
+        setVariants(
+          (variantData || []).map((variant) => ({
+            id: variant.id,
+            color: variant.color,
+            size: variant.size,
+            stock: String(variant.stock),
+          }))
+        );
+      }
 
       setLoading(false);
     };
@@ -54,6 +90,14 @@ export default function EditProductPage() {
   }, [id]);
 
   const handleSave = async () => {
+  if (
+    form.category === "服飾" &&
+    (variants.length === 0 || variants.some((variant) => !variant.color || !variant.size || variant.stock === ""))
+  ) {
+    alert("請完整填寫每個服飾規格的顏色、尺寸與庫存");
+    return;
+  }
+
   setSaving(true);
 
   let imageUrl = form.image;
@@ -86,6 +130,7 @@ export default function EditProductPage() {
     .update({
       name: form.name,
       price: Number(form.price),
+      category: form.category,
       size: form.size,
       stock: Number(form.stock),
       image: imageUrl,
@@ -93,14 +138,62 @@ export default function EditProductPage() {
     })
     .eq("id", id);
 
-  setSaving(false);
-
   if (error) {
-    console.error(error);
-    alert("修改失敗");
+    console.error("Supabase products update error:", {
+      error,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code,
+    });
+    alert(`修改失敗：${error.message}`);
+    setSaving(false);
     return;
   }
 
+  const { error: deleteVariantsError } = await supabase
+    .from("product_variants")
+    .delete()
+    .eq("product_id", id);
+
+  if (deleteVariantsError) {
+    console.error("Supabase product_variants delete error:", {
+      error: deleteVariantsError,
+      message: deleteVariantsError.message,
+      details: deleteVariantsError.details,
+      hint: deleteVariantsError.hint,
+      code: deleteVariantsError.code,
+    });
+    alert(`商品規格刪除失敗：${deleteVariantsError.message}`);
+    setSaving(false);
+    return;
+  }
+
+  if (form.category === "服飾") {
+    const { error: variantsError } = await supabase.from("product_variants").insert(
+      variants.map((variant) => ({
+        product_id: id,
+        color: variant.color.trim(),
+        size: variant.size.trim(),
+        stock: Number(variant.stock),
+      }))
+    );
+
+    if (variantsError) {
+      console.error("Supabase product_variants insert error:", {
+        error: variantsError,
+        message: variantsError.message,
+        details: variantsError.details,
+        hint: variantsError.hint,
+        code: variantsError.code,
+      });
+      alert(`商品規格新增失敗：${variantsError.message}`);
+      setSaving(false);
+      return;
+    }
+  }
+
+  setSaving(false);
   alert("商品修改成功");
   window.location.href = "/admin/products";
 };
@@ -135,6 +228,19 @@ export default function EditProductPage() {
           </div>
 
           <div>
+            <label className="mb-2 block text-sm text-zinc-300">商品類別</label>
+            <select
+              value={form.category}
+              onChange={(e) => setForm({ ...form, category: e.target.value })}
+              className="w-full rounded-xl border border-white/10 bg-[#1a1a1a] px-4 py-3 outline-none"
+            >
+              <option value="鞋類">鞋類</option>
+              <option value="服飾">服飾</option>
+              <option value="其他">其他</option>
+            </select>
+          </div>
+
+          <div>
             <label className="mb-2 block text-sm text-zinc-300">
               價格
             </label>
@@ -148,6 +254,7 @@ export default function EditProductPage() {
             />
           </div>
 
+          {form.category !== "服飾" && (
           <div className="grid gap-5 md:grid-cols-2">
             <div>
               <label className="mb-2 block text-sm text-zinc-300">
@@ -178,6 +285,58 @@ export default function EditProductPage() {
               />
             </div>
           </div>
+          )}
+
+          {form.category === "服飾" && (
+            <div className="space-y-4 rounded-xl border border-white/10 bg-[#1a1a1a] p-5">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="font-bold">服飾規格</h2>
+                  <p className="mt-1 text-sm text-zinc-500">每個顏色與尺寸組合各自設定庫存。</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setVariants([...variants, { color: "", size: "", stock: "" }])}
+                  className="rounded-lg border border-white/20 px-3 py-2 text-sm"
+                >
+                  新增規格
+                </button>
+              </div>
+              {variants.map((variant, index) => (
+                <div key={variant.id ?? index} className="grid gap-3 md:grid-cols-[1fr_1fr_120px_auto]">
+                  <input
+                    type="text"
+                    placeholder="顏色，例如：黑色"
+                    value={variant.color}
+                    onChange={(e) => setVariants(variants.map((item, itemIndex) => itemIndex === index ? { ...item, color: e.target.value } : item))}
+                    className="rounded-xl border border-white/10 bg-[#111111] px-4 py-3 outline-none"
+                  />
+                  <input
+                    type="text"
+                    placeholder="尺寸，例如：M、XL"
+                    value={variant.size}
+                    onChange={(e) => setVariants(variants.map((item, itemIndex) => itemIndex === index ? { ...item, size: e.target.value } : item))}
+                    className="rounded-xl border border-white/10 bg-[#111111] px-4 py-3 outline-none"
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="庫存"
+                    value={variant.stock}
+                    onChange={(e) => setVariants(variants.map((item, itemIndex) => itemIndex === index ? { ...item, stock: e.target.value } : item))}
+                    className="rounded-xl border border-white/10 bg-[#111111] px-4 py-3 outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setVariants(variants.filter((_, itemIndex) => itemIndex !== index))}
+                    className="rounded-lg border border-red-500/40 px-3 py-2 text-sm text-red-400"
+                  >
+                    移除
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div>
   <label className="mb-2 block text-sm text-zinc-300">

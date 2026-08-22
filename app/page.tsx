@@ -357,16 +357,28 @@ service_description: "",
               {product.name}
             </h3>
 
-            <p className="mt-2 text-zinc-400">
-              尺寸：{product.size || "未填寫"}
+            <p className="mt-1 text-sm text-zinc-500">
+              {product.category || "鞋類"}
             </p>
+
+            {product.category === "服飾" ? (
+              <p className="mt-2 text-zinc-400">
+                多規格商品｜庫存：{product.product_variants?.reduce((total: number, variant: { stock: number }) => total + variant.stock, 0) || 0}
+              </p>
+            ) : (
+              <>
+                <p className="mt-2 text-zinc-400">
+                  尺寸：{product.size || "未填寫"}
+                </p>
+
+                <p className="mt-2 text-sm text-zinc-500">
+                  庫存：{product.stock}
+                </p>
+              </>
+            )}
 
             <p className="mt-4 text-lg font-bold">
               NT$ {product.price}
-            </p>
-
-            <p className="mt-2 text-sm text-zinc-500">
-              庫存：{product.stock}
             </p>
           </div>
         </a>

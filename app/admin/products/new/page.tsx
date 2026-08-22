@@ -3,6 +3,12 @@
 import { useState } from "react";
 import { supabase } from "../../../lib/supabase";
 
+type VariantForm = {
+  color: string;
+  size: string;
+  stock: string;
+};
+
 export default function NewProductPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -10,15 +16,27 @@ export default function NewProductPage() {
   const [form, setForm] = useState({
     name: "",
     price: "",
+    category: "鞋類",
     size: "",
     stock: "",
     image: "",
     description: "",
   });
+  const [variants, setVariants] = useState<VariantForm[]>([
+    { color: "", size: "", stock: "" },
+  ]);
 
   const handleSubmit = async () => {
     if (!form.name || !form.price) {
       alert("請填寫商品名稱與價格");
+      return;
+    }
+
+    if (
+      form.category === "服飾" &&
+      variants.some((variant) => !variant.color || !variant.size || variant.stock === "")
+    ) {
+      alert("請完整填寫每個服飾規格的顏色、尺寸與庫存");
       return;
     }
 
@@ -48,22 +66,58 @@ export default function NewProductPage() {
       imageUrl = data.publicUrl;
     }
 
-    const { error } = await supabase.from("products").insert([
+    const { data, error } = await supabase.from("products").insert([
       {
         name: form.name,
         price: Number(form.price),
+        category: form.category,
         size: form.size,
         stock: Number(form.stock),
         image: imageUrl,
         description: form.description,
       },
-    ]);
+    ]).select("id").single();
 
-    if (error) {
-      console.error(error);
-      alert("新增失敗");
+    if (error || !data) {
+      console.error("Supabase products insert error:", {
+        error,
+        responseData: data,
+        errorDetails: error
+          ? {
+              message: error.message,
+              details: error.details,
+              hint: error.hint,
+              code: error.code,
+            }
+          : "products insert returned no data",
+      });
+      alert(error ? `新增失敗：${error.message}` : "新增失敗：商品未回傳 ID");
       setSubmitting(false);
       return;
+    }
+
+    if (form.category === "服飾") {
+      const { error: variantsError } = await supabase.from("product_variants").insert(
+        variants.map((variant) => ({
+          product_id: data.id,
+          color: variant.color.trim(),
+          size: variant.size.trim(),
+          stock: Number(variant.stock),
+        }))
+      );
+
+      if (variantsError) {
+        console.error("Supabase product_variants insert error:", {
+          error: variantsError,
+          message: variantsError.message,
+          details: variantsError.details,
+          hint: variantsError.hint,
+          code: variantsError.code,
+        });
+        alert(`服飾規格儲存失敗：${variantsError.message}`);
+        setSubmitting(false);
+        return;
+      }
     }
 
     alert("商品新增成功");
@@ -72,6 +126,7 @@ export default function NewProductPage() {
     setForm({
       name: "",
       price: "",
+      category: "鞋類",
       size: "",
       stock: "",
       image: "",
@@ -79,6 +134,7 @@ export default function NewProductPage() {
     });
 
     setImageFile(null);
+    setVariants([{ color: "", size: "", stock: "" }]);
     setSubmitting(false);
   };
 
@@ -105,6 +161,21 @@ export default function NewProductPage() {
 
           <div>
             <label className="mb-2 block text-sm text-zinc-300">
+              商品類別
+            </label>
+            <select
+              value={form.category}
+              onChange={(e) => setForm({ ...form, category: e.target.value })}
+              className="w-full rounded-xl border border-white/10 bg-[#1a1a1a] px-4 py-3 outline-none"
+            >
+              <option value="鞋類">鞋類</option>
+              <option value="服飾">服飾</option>
+              <option value="其他">其他</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm text-zinc-300">
               價格
             </label>
             <input
@@ -118,6 +189,7 @@ export default function NewProductPage() {
             />
           </div>
 
+          {form.category !== "服飾" && (
           <div className="grid gap-5 md:grid-cols-2">
             <div>
               <label className="mb-2 block text-sm text-zinc-300">
@@ -150,6 +222,59 @@ export default function NewProductPage() {
               />
             </div>
           </div>
+          )}
+
+          {form.category === "服飾" && (
+            <div className="space-y-4 rounded-xl border border-white/10 bg-[#1a1a1a] p-5">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="font-bold">服飾規格</h2>
+                  <p className="mt-1 text-sm text-zinc-500">每個顏色與尺寸組合各自設定庫存。</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setVariants([...variants, { color: "", size: "", stock: "" }])}
+                  className="rounded-lg border border-white/20 px-3 py-2 text-sm"
+                >
+                  新增規格
+                </button>
+              </div>
+              {variants.map((variant, index) => (
+                <div key={index} className="grid gap-3 md:grid-cols-[1fr_1fr_120px_auto]">
+                  <input
+                    type="text"
+                    placeholder="顏色，例如：黑色"
+                    value={variant.color}
+                    onChange={(e) => setVariants(variants.map((item, itemIndex) => itemIndex === index ? { ...item, color: e.target.value } : item))}
+                    className="rounded-xl border border-white/10 bg-[#111111] px-4 py-3 outline-none"
+                  />
+                  <input
+                    type="text"
+                    placeholder="尺寸，例如：M、XL"
+                    value={variant.size}
+                    onChange={(e) => setVariants(variants.map((item, itemIndex) => itemIndex === index ? { ...item, size: e.target.value } : item))}
+                    className="rounded-xl border border-white/10 bg-[#111111] px-4 py-3 outline-none"
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="庫存"
+                    value={variant.stock}
+                    onChange={(e) => setVariants(variants.map((item, itemIndex) => itemIndex === index ? { ...item, stock: e.target.value } : item))}
+                    className="rounded-xl border border-white/10 bg-[#111111] px-4 py-3 outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setVariants(variants.filter((_, itemIndex) => itemIndex !== index))}
+                    disabled={variants.length === 1}
+                    className="rounded-lg border border-red-500/40 px-3 py-2 text-sm text-red-400 disabled:opacity-40"
+                  >
+                    移除
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div>
             <label className="mb-2 block text-sm text-zinc-300">

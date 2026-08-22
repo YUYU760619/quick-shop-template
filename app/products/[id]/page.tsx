@@ -9,10 +9,19 @@ type Product = {
   id: number;
   name: string;
   price: number;
+  category?: string;
   size: string;
   stock: number;
   image: string;
   description: string;
+  product_variants?: Variant[];
+};
+
+type Variant = {
+  id: number;
+  color: string;
+  size: string;
+  stock: number;
 };
 
 export default function ProductDetailPage() {
@@ -20,13 +29,15 @@ export default function ProductDetailPage() {
   const id = Number(params.id);
 
   const [product, setProduct] = useState<Product | null>(null);
+  const [selectedColor, setSelectedColor] = useState("");
+  const [selectedSize, setSelectedSize] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchProduct = async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("*")
+        .select("*, product_variants(id, color, size, stock)")
         .eq("id", id)
         .single();
 
@@ -37,6 +48,10 @@ export default function ProductDetailPage() {
       }
 
       setProduct(data);
+      if (data.category === "服飾" && data.product_variants?.length) {
+        setSelectedColor(data.product_variants[0].color);
+        setSelectedSize(data.product_variants[0].size);
+      }
       setLoading(false);
     };
 
@@ -64,6 +79,13 @@ export default function ProductDetailPage() {
       </main>
     );
   }
+
+  const variants = product.product_variants || [];
+  const colors = [...new Set(variants.map((variant) => variant.color))];
+  const sizes = [...new Set(variants.filter((variant) => !selectedColor || variant.color === selectedColor).map((variant) => variant.size))];
+  const selectedVariant = variants.find(
+    (variant) => variant.color === selectedColor && variant.size === selectedSize
+  );
 
   return (
     <main className="min-h-screen bg-[#111111] px-6 py-12 text-white">
@@ -106,19 +128,53 @@ export default function ProductDetailPage() {
             </p>
 
             <div className="mt-8 space-y-4 text-zinc-300">
-              <div>
-                <p className="text-sm text-zinc-500">尺寸</p>
-                <p className="mt-1">
-                  {product.size || "未填寫"}
-                </p>
-              </div>
+              {product.category === "服飾" ? (
+                <>
+                  <div>
+                    <p className="text-sm text-zinc-500">顏色</p>
+                    <select
+                      value={selectedColor}
+                      onChange={(e) => {
+                        const nextColor = e.target.value;
+                        const nextSize = variants.find((variant) => variant.color === nextColor)?.size || "";
+                        setSelectedColor(nextColor);
+                        setSelectedSize(nextSize);
+                      }}
+                      className="mt-1 w-full rounded-xl border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white outline-none"
+                    >
+                      {colors.map((color) => <option key={color} value={color}>{color}</option>)}
+                    </select>
+                  </div>
 
-              <div>
-                <p className="text-sm text-zinc-500">庫存</p>
-                <p className="mt-1">
-                  {product.stock}
-                </p>
-              </div>
+                  <div>
+                    <p className="text-sm text-zinc-500">尺寸</p>
+                    <select
+                      value={selectedSize}
+                      onChange={(e) => setSelectedSize(e.target.value)}
+                      className="mt-1 w-full rounded-xl border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white outline-none"
+                    >
+                      {sizes.map((size) => <option key={size} value={size}>{size}</option>)}
+                    </select>
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-zinc-500">對應庫存</p>
+                    <p className="mt-1">{selectedVariant?.stock ?? 0}</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <p className="text-sm text-zinc-500">尺寸</p>
+                    <p className="mt-1">{product.size || "未填寫"}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-zinc-500">庫存</p>
+                    <p className="mt-1">{product.stock}</p>
+                  </div>
+                </>
+              )}
             </div>
             <button
   type="button"
@@ -126,7 +182,10 @@ export default function ProductDetailPage() {
     const message = `我想詢問這個商品
 商品：${product.name}
 價格：NT$ ${product.price}
-尺寸：${product.size || "未填寫"}`;
+類別：${product.category || "鞋類"}
+顏色：${product.category === "服飾" ? selectedColor : "不適用"}
+尺寸：${product.category === "服飾" ? selectedSize : (product.size || "未填寫")}
+庫存：${product.category === "服飾" ? (selectedVariant?.stock ?? 0) : product.stock}`;
 
     await navigator.clipboard.writeText(message);
 

@@ -7,10 +7,12 @@ type Product = {
   id: number;
   name: string;
   price: number;
+  category?: string;
   size: string;
   stock: number;
   image: string;
   description: string;
+  product_variants?: { color: string; size: string; stock: number }[];
 };
 
 export default function ProductsPage() {
@@ -21,7 +23,7 @@ export default function ProductsPage() {
     const fetchProducts = async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("*")
+        .select("*, product_variants(color, size, stock)")
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -90,10 +92,22 @@ export default function ProductsPage() {
                       {product.name}
                     </h2>
 
+                    <p className="mt-1 text-sm text-zinc-500">
+                      類別：{product.category || "鞋類"}
+                    </p>
+
                     <div className="mt-3 space-y-1 text-sm text-zinc-300">
                       <p>價格：NT$ {product.price}</p>
-                      <p>尺寸：{product.size || "未填寫"}</p>
-                      <p>庫存：{product.stock}</p>
+                      {product.category === "服飾" ? (
+                        <p>
+                          規格：{product.product_variants?.length || 0} 組，總庫存：{product.product_variants?.reduce((total, variant) => total + variant.stock, 0) || 0}
+                        </p>
+                      ) : (
+                        <>
+                          <p>尺寸：{product.size || "未填寫"}</p>
+                          <p>庫存：{product.stock}</p>
+                        </>
+                      )}
                     </div>
 
                     {product.description && (
