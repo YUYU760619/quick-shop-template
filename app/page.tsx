@@ -56,7 +56,7 @@ service_description: "",
   const fetchProducts = async () => {
     const { data, error } = await supabase
       .from("products")
-      .select("*")
+      .select("*, product_variants(stock)")
       .order("created_at", { ascending: false });
 
     if (error) {
