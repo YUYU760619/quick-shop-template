@@ -30,6 +30,21 @@ const shop = {
 
 export default function Home() {
   const [products, setProducts] = useState<any[]>([]);
+  const [services, setServices] = useState<any[]>([]);
+  const [heroImage, setHeroImage] = useState("");
+  const [serviceImage, setServiceImage] = useState("/nulo-clean-service.png.png");
+  const [shopInfo, setShopInfo] = useState({
+  shop_name: shop.name,
+  address: shop.address,
+  business_hours: shop.hours,
+  phone: shop.phone,
+  instagram: shop.instagram,
+  line_url: shop.line,
+  slogan: shop.slogan,
+  description: shop.description,
+  service_title: "",
+service_description: "",
+});
  const [booking, setBooking] = useState({
     name: "",
     phone: "",
@@ -37,7 +52,7 @@ export default function Home() {
     service: "",
     note: "",
   });
-  useEffect(() => {
+ useEffect(() => {
   const fetchProducts = async () => {
     const { data, error } = await supabase
       .from("products")
@@ -52,7 +67,69 @@ export default function Home() {
     setProducts(data || []);
   };
 
+  const fetchServices = async () => {
+    const { data, error } = await supabase
+      .from("services")
+      .select("*")
+      .order("sort_order", { ascending: true });
+
+    if (error) {
+      console.error("讀取服務失敗：", error);
+      return;
+    }
+
+    setServices(data || []);
+  };
+
+  const fetchHeroImage = () => {
+    const { data } = supabase.storage
+      .from("product-images")
+      .getPublicUrl("hero-image");
+
+    setHeroImage(`${data.publicUrl}?t=${Date.now()}`);
+  };
+
+  const fetchServiceImage = () => {
+    const { data } = supabase.storage
+      .from("product-images")
+      .getPublicUrl("service-image");
+
+    setServiceImage(`${data.publicUrl}?t=${Date.now()}`);
+  };
+
+  const fetchShopInfo = async () => {
+    const { data, error } = await supabase
+      .from("site_settings")
+      .select("*")
+      .limit(1)
+      .single();
+
+    if (error) {
+      console.error("讀取店家資訊失敗：", error);
+      return;
+    }
+
+    if (data) {
+      setShopInfo({
+        shop_name: data.shop_name || shop.name,
+        address: data.address || shop.address,
+        business_hours: data.business_hours || shop.hours,
+        phone: data.phone || shop.phone,
+        instagram: data.instagram || shop.instagram,
+        line_url: data.line_url || shop.line,
+        slogan: data.slogan || shop.slogan,
+        description: data.description || shop.description,
+        service_title: data.service_title || "",
+        service_description: data.service_description || "",
+      });
+    }
+  };
+
   fetchProducts();
+  fetchServices();
+  fetchHeroImage();
+  fetchServiceImage();
+  fetchShopInfo();
 }, []);
    const handleBooking = async () => {
   if (
@@ -109,7 +186,7 @@ export default function Home() {
       {/* 導覽列 */}
       <header className="flex items-center justify-between px-6 py-6 md:px-12">
         <h1 className="text-xl font-bold tracking-widest">
-          {shop.name}
+         {shopInfo.shop_name}
         </h1>
 
         <a
@@ -130,11 +207,11 @@ export default function Home() {
           </p>
 
           <h2 className="text-4xl font-bold leading-tight md:text-6xl">
-  {shop.slogan}
+  {shopInfo.slogan}
 </h2>
 
           <p className="mt-6 max-w-xl text-base leading-7 text-zinc-400 md:text-lg">
-  {shop.description}
+  {shopInfo.description}
 </p>
 
           <div className="mt-8 flex gap-3">
@@ -157,7 +234,7 @@ export default function Home() {
         {/* 右邊照片 */}
         <div className="relative h-[420px] overflow-hidden rounded-3xl md:h-[600px]">
           <Image
-            src={shop.image}
+            src={heroImage}
             alt="MOKU COFFEE 咖啡店"
             fill
             sizes="(max-width: 768px) 100vw, 50vw"
@@ -173,7 +250,7 @@ export default function Home() {
 
     <div className="relative aspect-[4/3] overflow-hidden rounded-3xl">
       <Image
-        src="/nulo-clean-service.png.png"
+        src={serviceImage}
         alt="NULO CLEAN 球鞋清潔服務"
         fill
         className="object-cover"
@@ -186,17 +263,12 @@ export default function Home() {
       </p>
 
       <h2 className="mt-4 text-4xl font-bold md:text-5xl">
-        不只是洗乾淨，
-        <br />
-        而是把鞋好好整理一次。
-      </h2>
+  {shopInfo.service_title}
+</h2>
 
       <p className="mt-6 leading-8 text-zinc-400">
-        依照不同鞋款、材質與髒污狀況，
-        選擇適合的清潔方式。
-        從日常清潔、深層清潔到麂皮鞋款，
-        每一雙鞋都個別處理。
-      </p>
+  {shopInfo.service_description}
+</p>
 
       <a
         href="#menu"
@@ -227,25 +299,26 @@ export default function Home() {
           </p>
 
           <div className="mt-12 grid gap-4 md:grid-cols-2">
-              {shop.menu.map(([name, en, price]) => (
-              <div
-                key={name}
-                className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-5"
-              >
-                <div>
-                  <p className="text-lg font-medium">
-                    {name}
-                  </p>
-                  <p className="mt-1 text-sm text-zinc-500">
-                    {en}
-                  </p>
-                </div>
+              {services.map((service) => (
+  <div
+    key={service.id}
+    className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-5"
+  >
+    <div>
+      <p className="text-lg font-medium">
+        {service.name}
+      </p>
 
-                <p className="font-medium">
-                  {price}
-                </p>
-              </div>
-            ))}
+      <p className="mt-1 text-sm text-zinc-500">
+        {service.name_en}
+      </p>
+    </div>
+
+    <p className="font-medium">
+      {service.price}
+    </p>
+  </div>
+))}
           </div>
         </div>
       </section>
@@ -320,21 +393,21 @@ export default function Home() {
               <div>
                 <p className="text-sm text-zinc-500">地址</p>
                 <p className="mt-1">
-                  {shop.address}
+                  {shopInfo.address}
                 </p>
               </div>
 
               <div>
                 <p className="text-sm text-zinc-500">營業時間</p>
                 <p className="mt-1">
-                  {shop.hours}
+                  {shopInfo.business_hours}
                 </p>
               </div>
 
               <div>
                 <p className="text-sm text-zinc-500">電話</p>
                 <p className="mt-1">
-                  {shop.phone}
+                  {shopInfo.phone}
                 </p>
               </div>
             </div>
@@ -352,21 +425,21 @@ export default function Home() {
 
             <div className="mt-8 flex flex-wrap gap-3">
               <a
-                href={shop.instagram}
+                href={shopInfo.instagram}
                 className="rounded-full bg-white px-6 py-3 font-medium text-black"
               >
                 Instagram
               </a>
 
               <a
-               href={shop.line}
+               href={shopInfo.line_url}
                 className="rounded-full border border-white/30 px-6 py-3 font-medium"
               >
                 LINE 聯絡
               </a>
 
               <a
-                href={`tel:${shop.phone.replace(/-/g, "")}`}
+                href={`tel:${shopInfo.phone.replace(/-/g, "")}`}
                 className="rounded-full border border-white/30 px-6 py-3 font-medium"
               >
                 撥打電話
@@ -431,17 +504,16 @@ export default function Home() {
   }
   className="rounded-2xl border border-white/10 bg-[#171717] px-5 py-4 outline-none"
 >
+  <option value="" disabled>
+    選擇清潔項目
+  </option>
 
-        <option value="" disabled>
-          選擇清潔項目
-        </option>
-        <option>基礎清潔</option>
-        <option>深層清潔</option>
-        <option>麂皮清潔</option>
-        <option>鞋底清潔</option>
-        <option>局部處理</option>
-        <option>特殊鞋款</option>
-      </select>
+  {services.map((service) => (
+    <option key={service.id} value={service.name}>
+      {service.name}
+    </option>
+  ))}
+</select>
 
       <textarea
   placeholder="備註，例如：鞋面有油漬、泛黃、麂皮掉色..."

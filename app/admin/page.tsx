@@ -21,6 +21,8 @@ export default function AdminPage() {
   return (
     <main className="min-h-screen bg-[#111111] px-6 py-12 text-white">
       <div className="mx-auto max-w-5xl">
+
+        {/* 標題 */}
         <div className="mb-10 flex items-start justify-between gap-6">
           <div>
             <p className="text-sm tracking-[0.3em] text-zinc-500">
@@ -32,7 +34,7 @@ export default function AdminPage() {
             </h1>
 
             <p className="mt-3 text-zinc-400">
-              管理商品與清潔預約
+              管理商品、清潔服務與預約
             </p>
           </div>
 
@@ -45,7 +47,10 @@ export default function AdminPage() {
           </button>
         </div>
 
+        {/* 後台功能 */}
         <div className="grid gap-6 md:grid-cols-2">
+
+          {/* 商品管理 */}
           <a
             href="/admin/products"
             className="rounded-3xl border border-white/10 bg-[#1a1a1a] p-8 transition hover:-translate-y-1 hover:border-white/30"
@@ -67,6 +72,7 @@ export default function AdminPage() {
             </div>
           </a>
 
+          {/* 預約管理 */}
           <a
             href="/admin/bookings"
             className="rounded-3xl border border-white/10 bg-[#1a1a1a] p-8 transition hover:-translate-y-1 hover:border-white/30"
@@ -80,15 +86,61 @@ export default function AdminPage() {
             </h2>
 
             <p className="mt-4 leading-7 text-zinc-400">
-              查看客人預約、鞋款與備註，管理待處理、已聯絡、清洗中與已完成狀態。
+              查看客人預約、鞋款與備註，管理預約狀態。
             </p>
 
             <div className="mt-8 text-sm font-medium">
               進入預約管理 →
             </div>
           </a>
+
+          {/* 網站設定 */}
+          <a
+            href="/admin/site"
+            className="rounded-3xl border border-white/10 bg-[#1a1a1a] p-8 transition hover:-translate-y-1 hover:border-white/30"
+          >
+            <p className="text-sm tracking-[0.2em] text-zinc-500">
+              SITE
+            </p>
+
+            <h2 className="mt-4 text-3xl font-bold">
+              網站設定
+            </h2>
+
+            <p className="mt-4 leading-7 text-zinc-400">
+              更換首頁圖片與修改網站顯示內容。
+            </p>
+
+            <div className="mt-8 text-sm font-medium">
+              進入網站設定 →
+            </div>
+          </a>
+
+          {/* 清潔服務管理 */}
+          <a
+            href="/admin/services"
+            className="rounded-3xl border border-white/10 bg-[#1a1a1a] p-8 transition hover:-translate-y-1 hover:border-white/30"
+          >
+            <p className="text-sm tracking-[0.2em] text-zinc-500">
+              SERVICES
+            </p>
+
+            <h2 className="mt-4 text-3xl font-bold">
+              清潔服務管理
+            </h2>
+
+            <p className="mt-4 leading-7 text-zinc-400">
+              新增、修改或刪除清潔服務與價格。
+            </p>
+
+            <div className="mt-8 text-sm font-medium">
+              進入清潔服務管理 →
+            </div>
+          </a>
+
         </div>
 
+        {/* 返回首頁 */}
         <div className="mt-8">
           <a
             href="/"
@@ -97,6 +149,7 @@ export default function AdminPage() {
             ← 返回網站首頁
           </a>
         </div>
+
       </div>
     </main>
   );
