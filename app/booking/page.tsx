@@ -9,7 +9,7 @@ type Service = { id: string; name: string; name_en?: string; price: string };
 
 export default function BookingPage() {
   const [services, setServices] = useState<Service[]>([]);
-  const [serviceImage, setServiceImage] = useState("/nulo-clean-service.png.png");
+  const [serviceImage, setServiceImage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ name: "", phone: "", shoes: "", service: "", note: "" });
 
@@ -35,7 +35,7 @@ export default function BookingPage() {
   return <main className="min-h-screen bg-[#f4efe6] text-[#171512]">
     <header className="border-b-2 border-black"><div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 md:px-10"><Link href="/"><strong className="block text-2xl font-black leading-none tracking-[-.06em]">GOOD STUFF</strong><span className="text-xs font-bold tracking-[.28em] text-[#f05a19]">咕司大福</span></Link><Link href="/" className="rounded-full border-2 border-black px-5 py-3 text-sm font-black">← 回商城</Link></div></header>
 
-    <section className="mx-auto grid max-w-7xl gap-12 px-5 py-14 md:grid-cols-2 md:items-center md:px-10 md:py-20"><div><p className="text-sm font-black tracking-[.28em] text-[#f05a19]">GOOD STUFF SERVICES / 01</p><h1 className="mt-4 text-6xl font-black tracking-[-.065em] md:text-8xl">NULO<br/>CLEAN</h1><p className="mt-5 text-2xl font-bold">把喜歡的鞋，重新整理好。</p><p className="mt-5 max-w-lg leading-8 text-black/60">依照鞋款材質與髒污程度，選擇合適的清潔方式。送出預約後，我們會再和你確認鞋況與報價。</p><a href="#booking-form" className="mt-8 inline-block rounded-full bg-[#f05a19] px-7 py-4 font-black text-white">我要預約 →</a></div><div className="relative aspect-[4/3] overflow-hidden rounded-[2rem] border-2 border-black bg-white shadow-[12px_12px_0_#171512]"><Image src={serviceImage} alt="NULO CLEAN 球鞋清潔服務" fill sizes="(max-width:768px) 100vw,50vw" className="object-cover"/></div></section>
+    <section className="mx-auto grid max-w-7xl gap-12 px-5 py-14 md:grid-cols-2 md:items-center md:px-10 md:py-20"><div><p className="text-sm font-black tracking-[.28em] text-[#f05a19]">GOOD STUFF SERVICES / 01</p><h1 className="mt-4 text-6xl font-black tracking-[-.065em] md:text-8xl">NULO<br/>CLEAN</h1><p className="mt-5 text-2xl font-bold">把喜歡的鞋，重新整理好。</p><p className="mt-5 max-w-lg leading-8 text-black/60">依照鞋款材質與髒污程度，選擇合適的清潔方式。送出預約後，我們會再和你確認鞋況與報價。</p><a href="#booking-form" className="mt-8 inline-block rounded-full bg-[#f05a19] px-7 py-4 font-black text-white">我要預約 →</a></div><div className="relative aspect-[4/3] overflow-hidden rounded-[2rem] border-2 border-black bg-[#e7dccb] shadow-[12px_12px_0_#171512]">{serviceImage && <Image src={serviceImage} alt="NULO CLEAN 球鞋清潔服務" fill sizes="(max-width:768px) 100vw,50vw" className="object-cover"/>}</div></section>
 
     <section className="border-y-2 border-black bg-[#171512] px-5 py-16 text-[#f4efe6] md:px-10"><div className="mx-auto max-w-7xl"><p className="text-sm font-black tracking-[.28em] text-[#f05a19]">CLEANING MENU</p><h2 className="mt-3 text-4xl font-black md:text-6xl">清潔服務</h2><div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{services.map((service)=><div key={service.id} className="flex justify-between rounded-2xl border border-white/20 bg-white/[.05] p-5"><div><strong className="text-lg">{service.name}</strong><p className="mt-1 text-sm text-white/40">{service.name_en}</p></div><strong className="text-[#f05a19]">{service.price}</strong></div>)}</div></div></section>
 
