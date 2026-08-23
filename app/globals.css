@@ -20,3 +20,35 @@ body {
 
 html { scroll-behavior: smooth; }
 ::selection { background: #f05a19; color: white; }
+
+.daifu-walker {
+  position: fixed;
+  z-index: 60;
+  transform: translate(-50%, -50%);
+  transition-property: left, top;
+  transition-timing-function: linear;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.daifu-character {
+  display: block;
+  transform-origin: center;
+}
+
+.daifu-character.is-walking img {
+  animation: daifu-step .38s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .daifu-walker {
+    display: none;
+  }
+}
+
+@keyframes daifu-step {
+  from { translate: 0 0; }
+  to { translate: 0 -4px; }
+}

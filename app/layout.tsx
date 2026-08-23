@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import WalkingDaifu from "./components/walking-daifu";
 
 export const metadata: Metadata = {
   title: "GOOD STUFF｜咕司大福",
@@ -12,7 +13,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="zh-Hant"
       className="h-full antialiased"
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">{children}<WalkingDaifu /></body>
     </html>
   );
 }
