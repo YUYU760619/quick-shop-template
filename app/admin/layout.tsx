@@ -91,6 +91,8 @@ export default function AdminLayout({
               預約
             </a>
 
+            <a href="/admin/orders" className="text-sm text-zinc-400 hover:text-white">訂單</a>
+
             <button
               type="button"
               onClick={handleLogout}

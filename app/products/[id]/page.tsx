@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
+import CartIndicator from "../../components/cart-indicator";
+import { useCart } from "../../components/cart-context";
 
 type Variant = { id: number; color: string; size: string; stock: number };
 type Product = { id: number; name: string; price: number; category?: string; size?: string; stock: number; image?: string; description?: string; product_variants?: Variant[] };
@@ -16,6 +18,8 @@ export default function ProductDetailPage() {
   const [selectedColor, setSelectedColor] = useState("");
   const [selectedSize, setSelectedSize] = useState("");
   const [loading, setLoading] = useState(true);
+  const [added, setAdded] = useState(false);
+  const { addItem } = useCart();
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -56,7 +60,7 @@ export default function ProductDetailPage() {
   };
 
   return <main className="min-h-screen bg-[#f4efe6] text-[#171512]">
-    <header className="border-b-2 border-black"><div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 md:px-10"><Link href="/"><strong className="block text-2xl font-black leading-none tracking-[-.06em]">GOOD STUFF</strong><span className="text-xs font-bold tracking-[.28em] text-[#f05a19]">咕司大福</span></Link><Link href="/#shop" className="rounded-full border-2 border-black px-5 py-3 text-sm font-black">← 回商城</Link></div></header>
+    <header className="border-b-2 border-black"><div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 md:px-10"><Link href="/"><strong className="block text-2xl font-black leading-none tracking-[-.06em]">GOOD STUFF</strong><span className="text-xs font-bold tracking-[.28em] text-[#f05a19]">咕司大福</span></Link><div className="flex gap-2"><Link href="/#shop" className="hidden rounded-full border-2 border-black px-5 py-3 text-sm font-black sm:block">← 回商城</Link><CartIndicator/></div></div></header>
 
     <section className="mx-auto grid max-w-7xl gap-12 px-5 py-10 md:grid-cols-[1.08fr_.92fr] md:px-10 md:py-16">
       <div className="relative aspect-square overflow-hidden rounded-[2rem] border-2 border-black bg-white shadow-[12px_12px_0_#171512]">{product.image ? <Image src={product.image} alt={product.name} fill sizes="(max-width:768px) 100vw,55vw" className="object-contain p-4" unoptimized/> : <div className="grid h-full place-items-center text-xl font-black text-black/30">GOOD STUFF</div>}</div>
@@ -67,7 +71,7 @@ export default function ProductDetailPage() {
           <div><p className="mb-3 text-sm font-black tracking-[.15em]">選擇尺寸</p><div className="flex flex-wrap gap-3">{colorVariants.map((variant)=><button key={variant.id} type="button" disabled={variant.stock===0} onClick={()=>setSelectedSize(variant.size)} className={`min-w-16 rounded-xl border-2 border-black px-5 py-3 font-black transition disabled:cursor-not-allowed disabled:border-black/20 disabled:text-black/25 ${selectedSize===variant.size ? "bg-[#f05a19] text-white shadow-[4px_4px_0_#171512]" : "bg-[#fffaf1]"}`}>{variant.size}</button>)}</div></div>
         </div> : <div className="mt-10 grid grid-cols-2 gap-4"><div className="rounded-2xl border-2 border-black bg-[#fffaf1] p-5"><span className="text-sm text-black/45">尺寸</span><strong className="mt-1 block text-xl">{product.size || "不適用"}</strong></div><div className="rounded-2xl border-2 border-black bg-[#fffaf1] p-5"><span className="text-sm text-black/45">庫存</span><strong className="mt-1 block text-xl">{product.stock || 0}</strong></div></div>}
 
-        <button type="button" onClick={askOnLine} disabled={availableStock===0} className="mt-10 w-full rounded-full bg-black px-7 py-5 text-lg font-black text-white transition hover:bg-[#f05a19] disabled:cursor-not-allowed disabled:bg-black/25">{availableStock > 0 ? "LINE 詢問此商品 →" : "商品目前售罄"}</button><p className="mt-3 text-center text-xs text-black/45">點擊後會複製商品與規格資料，再開啟 LINE。</p>
+        <button type="button" onClick={()=>{addItem({productId:product.id,name:product.name,price:product.price,image:product.image,category:product.category||"其他",color:product.category==="服飾"?selectedColor:undefined,size:product.category==="服飾"?selectedSize:product.size,maxStock:availableStock});setAdded(true);setTimeout(()=>setAdded(false),1800)}} disabled={availableStock===0} className="mt-10 w-full rounded-full bg-black px-7 py-5 text-lg font-black text-white transition hover:bg-[#f05a19] disabled:cursor-not-allowed disabled:bg-black/25">{availableStock>0?(added?"已加入購物車 ✓":"加入購物車 →"):"商品目前售罄"}</button><button type="button" onClick={askOnLine} disabled={availableStock===0} className="mt-3 w-full rounded-full border-2 border-black px-7 py-4 font-black transition hover:bg-[#fffaf1] disabled:opacity-30">先用 LINE 詢問</button><p className="mt-3 text-center text-xs text-black/45">購物車目前只保存在這台裝置，不會送出訂單或扣除庫存。</p>
 
         {product.description && <div className="mt-10 border-t-2 border-black pt-8"><p className="text-sm font-black tracking-[.15em] text-[#f05a19]">PRODUCT DETAILS</p><p className="mt-4 whitespace-pre-line leading-8 text-black/65">{product.description}</p></div>}
       </div>

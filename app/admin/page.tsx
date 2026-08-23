@@ -50,6 +50,8 @@ export default function AdminPage() {
         {/* 後台功能 */}
         <div className="grid gap-6 md:grid-cols-2">
 
+          <a href="/admin/orders" className="rounded-3xl border border-orange-500/30 bg-[#1a1a1a] p-8 transition hover:-translate-y-1 hover:border-orange-500"><p className="text-sm tracking-[0.2em] text-orange-500">ORDERS</p><h2 className="mt-4 text-3xl font-bold">訂單管理</h2><p className="mt-4 leading-7 text-zinc-400">查看訂購內容、收件資料與更新訂單狀態。</p><div className="mt-8 text-sm font-medium">進入訂單管理 →</div></a>
+
           {/* 商品管理 */}
           <a
             href="/admin/products"
