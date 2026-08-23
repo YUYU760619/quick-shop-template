@@ -240,20 +240,20 @@ export default function NewProductPage() {
                 </button>
               </div>
               {variants.map((variant, index) => (
-                <div key={index} className="grid gap-3 md:grid-cols-[1fr_1fr_120px_auto]">
+                <div key={index} className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_96px]">
                   <input
                     type="text"
                     placeholder="顏色，例如：黑色"
                     value={variant.color}
                     onChange={(e) => setVariants(variants.map((item, itemIndex) => itemIndex === index ? { ...item, color: e.target.value } : item))}
-                    className="rounded-xl border border-white/10 bg-[#111111] px-4 py-3 outline-none"
+                    className="min-w-0 w-full rounded-xl border border-white/10 bg-[#111111] px-4 py-3 outline-none"
                   />
                   <input
                     type="text"
                     placeholder="尺寸，例如：M、XL"
                     value={variant.size}
                     onChange={(e) => setVariants(variants.map((item, itemIndex) => itemIndex === index ? { ...item, size: e.target.value } : item))}
-                    className="rounded-xl border border-white/10 bg-[#111111] px-4 py-3 outline-none"
+                    className="min-w-0 w-full rounded-xl border border-white/10 bg-[#111111] px-4 py-3 outline-none"
                   />
                   <input
                     type="number"
@@ -261,13 +261,13 @@ export default function NewProductPage() {
                     placeholder="庫存"
                     value={variant.stock}
                     onChange={(e) => setVariants(variants.map((item, itemIndex) => itemIndex === index ? { ...item, stock: e.target.value } : item))}
-                    className="rounded-xl border border-white/10 bg-[#111111] px-4 py-3 outline-none"
+                    className="min-w-0 w-full rounded-xl border border-white/10 bg-[#111111] px-4 py-3 outline-none"
                   />
                   <button
                     type="button"
                     onClick={() => setVariants(variants.filter((_, itemIndex) => itemIndex !== index))}
                     disabled={variants.length === 1}
-                    className="rounded-lg border border-red-500/40 px-3 py-2 text-sm text-red-400 disabled:opacity-40"
+                    className="w-full justify-self-end rounded-lg border border-red-500/40 px-3 py-2 text-sm text-red-400 disabled:opacity-40 md:col-span-3 md:w-auto"
                   >
                     移除
                   </button>
