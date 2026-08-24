@@ -12,6 +12,7 @@ type Product = {
   stock: number;
   image: string;
   description: string;
+  is_active: boolean;
   product_variants?: { color: string; size: string; stock: number }[];
 };
 
@@ -38,6 +39,15 @@ export default function ProductsPage() {
 
     fetchProducts();
   }, []);
+  const toggleActive = async (product: Product) => {
+    const nextActive = !product.is_active;
+    const action = nextActive ? "重新上架" : "下架";
+    if (!window.confirm(`確定要${action}「${product.name}」嗎？`)) return;
+    const { error } = await supabase.from("products").update({ is_active: nextActive }).eq("id", product.id);
+    if (error) return alert(`${action}失敗：${error.message}`);
+    setProducts((current) => current.map((item) => item.id === product.id ? { ...item, is_active: nextActive } : item));
+    alert(`商品已${action}`);
+  };
   const handleDelete = async (id: number) => {
   const confirmed = window.confirm("確定要刪除這個商品嗎？");
 
@@ -50,7 +60,7 @@ export default function ProductsPage() {
 
   if (error) {
     console.error(error);
-    alert("刪除失敗");
+    alert(error.code === "23503" ? "這項商品已有訂單紀錄，不能永久刪除，請改用「下架」。" : `刪除失敗：${error.message}`);
     return;
   }
 
@@ -84,7 +94,7 @@ export default function ProductsPage() {
             {products.map((product) => (
               <div
                 key={product.id}
-                className="rounded-2xl border border-white/10 bg-[#1a1a1a] p-5"
+                className={`rounded-2xl border p-5 ${product.is_active ? "border-white/10 bg-[#1a1a1a]" : "border-zinc-700 bg-[#151515] opacity-70"}`}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -95,6 +105,7 @@ export default function ProductsPage() {
                     <p className="mt-1 text-sm text-zinc-500">
                       類別：{product.category || "鞋類"}
                     </p>
+                    <p className={`mt-2 inline-block rounded-full px-3 py-1 text-xs font-bold ${product.is_active ? "bg-emerald-500/15 text-emerald-400" : "bg-zinc-700 text-zinc-300"}`}>{product.is_active ? "上架中" : "已下架"}</p>
 
                     <div className="mt-3 space-y-1 text-sm text-zinc-300">
                       <p>價格：NT$ {product.price}</p>
@@ -128,6 +139,14 @@ export default function ProductsPage() {
   >
     編輯
   </a>
+
+  <button
+    type="button"
+    onClick={() => toggleActive(product)}
+    className={`rounded-lg border px-4 py-2 text-sm ${product.is_active ? "border-amber-500/40 text-amber-400" : "border-emerald-500/40 text-emerald-400"}`}
+  >
+    {product.is_active ? "下架" : "重新上架"}
+  </button>
 
   <button
     type="button"

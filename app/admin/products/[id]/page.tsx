@@ -303,7 +303,7 @@ export default function EditProductPage() {
                 </button>
               </div>
               {variants.map((variant, index) => (
-                <div key={variant.id ?? index} className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_96px]">
+                <div key={variant.id ?? index} className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_96px]">
                   <input
                     type="text"
                     placeholder="顏色，例如：黑色"
@@ -329,7 +329,7 @@ export default function EditProductPage() {
                   <button
                     type="button"
                     onClick={() => setVariants(variants.filter((_, itemIndex) => itemIndex !== index))}
-                    className="w-full justify-self-end rounded-lg border border-red-500/40 px-3 py-2 text-sm text-red-400 md:col-span-3 md:w-auto"
+                    className="rounded-lg border border-red-500/40 px-4 py-2 text-sm text-red-400 md:col-span-3 md:justify-self-end"
                   >
                     移除
                   </button>

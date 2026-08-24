@@ -23,7 +23,7 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     const fetchProduct = async () => {
-      const { data, error } = await supabase.from("products").select("*, product_variants(id, color, size, stock)").eq("id", id).single();
+      const { data, error } = await supabase.from("products").select("*, product_variants(id, color, size, stock)").eq("id", id).eq("is_active", true).single();
       if (error) { console.error(error); setLoading(false); return; }
       setProduct(data);
       if (data.category === "服飾" && data.product_variants?.length) {

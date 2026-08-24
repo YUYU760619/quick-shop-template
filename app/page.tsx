@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabase";
+import CartIndicator from "./components/cart-indicator";
 
 type Product = { id: string; name: string; category?: string; image?: string; stock?: number; price: number; product_variants?: { stock: number }[] };
 const fallback = { address: "台北｜可私訊詢問收送方式", hours: "預約制", phone: "", instagram: "https://instagram.com/", line: "https://line.me/" };
@@ -16,7 +17,7 @@ export default function Home() {
   useEffect(() => {
     const load = async () => {
       const [productResult, settingResult] = await Promise.all([
-        supabase.from("products").select("*, product_variants(stock)").order("created_at", { ascending: false }),
+        supabase.from("products").select("*, product_variants(stock)").eq("is_active", true).order("created_at", { ascending: false }),
         supabase.from("site_settings").select("*").limit(1).single(),
       ]);
       if (productResult.error) console.error("讀取商品失敗：", productResult.error); else setProducts(productResult.data || []);
@@ -34,7 +35,7 @@ export default function Home() {
     <header className="sticky top-0 z-50 border-b-2 border-black bg-[#f4efe6]/95 backdrop-blur"><div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 md:px-10">
       <a href="#top"><strong className="block text-2xl font-black leading-none tracking-[-0.06em]">GOOD STUFF</strong><span className="text-xs font-bold tracking-[0.28em] text-[#f05a19]">咕司大福</span></a>
       <nav className="hidden gap-8 text-sm font-bold md:flex"><a href="#shop">SHOP</a><Link href="/booking">NULO CLEAN</Link><a href="#about">ABOUT</a></nav>
-      <a href="#shop" className="rounded-full bg-black px-5 py-3 text-sm font-bold text-white">逛好東西 →</a>
+      <CartIndicator />
     </div><nav className="grid grid-cols-3 border-t border-black/20 text-center text-xs font-black md:hidden"><a href="#shop" className="border-r border-black/20 px-2 py-3">SHOP</a><Link href="/booking" className="border-r border-black/20 px-2 py-3">NULO CLEAN</Link><a href="#about" className="px-2 py-3">ABOUT</a></nav></header>
 
     <section id="top" className="mx-auto grid min-h-[78vh] max-w-7xl items-center gap-10 px-5 py-12 md:grid-cols-[.9fr_1.1fr] md:px-10 md:py-16">

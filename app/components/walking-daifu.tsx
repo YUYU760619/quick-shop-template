@@ -15,11 +15,9 @@ export default function WalkingDaifu() {
   const [paused, setPaused] = useState(false);
   const [frameIndex, setFrameIndex] = useState(0);
   const [duration, setDuration] = useState(5);
-  const [musicOn, setMusicOn] = useState(false);
   const positionRef = useRef(position);
 
   useEffect(() => { positionRef.current = position; }, [position]);
-  useEffect(()=>{const listen=(event:Event)=>setMusicOn((event as CustomEvent<boolean>).detail);window.addEventListener("good-stuff-music",listen);return()=>window.removeEventListener("good-stuff-music",listen)},[]);
 
   useEffect(() => {
     if (paused) return;
@@ -30,7 +28,6 @@ export default function WalkingDaifu() {
       const next = { x: 8 + Math.random() * 84, y: 28 + Math.random() * 58 };
       const distance = Math.hypot(next.x - current.x, next.y - current.y);
       const seconds = Math.max(3.5, Math.min(8, distance / 10));
-      // 原始角色面向左側：往右移動時需要水平翻面。
       setDirection(next.x >= current.x ? -1 : 1);
       setDuration(seconds);
       setMoving(true);
@@ -57,7 +54,7 @@ export default function WalkingDaifu() {
   const frame = paused ? 4 : frames[frameIndex % frames.length];
 
   return <button type="button" onClick={() => setPaused((value) => !value)} className="daifu-walker" style={{ left: `${position.x}%`, top: `${position.y}%`, transitionDuration: paused ? "0s" : `${duration}s` }} aria-label={paused ? "讓大福雞繼續活動" : "讓大福雞停一下"} title={paused ? "點一下繼續活動" : "點一下停住大福雞"}>
-    <span className={`daifu-character ${moving ? "is-walking" : "is-idle"} ${musicOn?"music-on":""}`} style={{ transform: `scaleX(${direction})` }}>
+    <span className={`daifu-character ${moving ? "is-walking" : "is-idle"}`} style={{ transform: `scaleX(${direction})` }}>
       <Image src={`/daifu-frames/frame-${frame}.png`} alt="" width={512} height={512} className="h-auto w-[88px] drop-shadow-[0_5px_0_rgba(23,21,18,.22)] md:w-[124px]" unoptimized/>
     </span>
   </button>;

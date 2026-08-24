@@ -52,10 +52,3 @@ html { scroll-behavior: smooth; }
   from { translate: 0 0; }
   to { translate: 0 -4px; }
 }
-
-.daifu-character.music-on img { animation: daifu-groove .34s ease-in-out infinite alternate; }
-@keyframes daifu-groove { from { translate: 0 0; rotate: -2deg; } to { translate: 0 -8px; rotate: 3deg; } }
-
-.music-toggle { position: fixed; right: 14px; bottom: 14px; z-index: 70; border: 2px solid #171512; border-radius: 999px; background: #fffaf1; color: #171512; padding: 10px 16px; font-weight: 900; box-shadow: 4px 4px 0 #171512; cursor: pointer; }
-.music-toggle.is-playing { background: #f05a19; color: white; animation: music-pulse .7s ease-in-out infinite alternate; }
-@keyframes music-pulse { to { transform: translateY(-3px); } }
