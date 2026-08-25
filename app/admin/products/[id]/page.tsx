@@ -10,6 +10,7 @@ type Variant = {
   size: string;
   stock: string;
 };
+type ProductImage = { id: number; image_url: string; sort_order: number };
 
 export default function EditProductPage() {
   const params = useParams();
@@ -19,11 +20,15 @@ export default function EditProductPage() {
   const [saving, setSaving] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
+  const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
+  const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
+  const [galleryImages, setGalleryImages] = useState<ProductImage[]>([]);
 
   const [form, setForm] = useState({
     name: "",
     price: "",
     category: "鞋類",
+    snack_type: "餅乾",
     size: "",
     stock: "",
     image: "",
@@ -50,6 +55,7 @@ export default function EditProductPage() {
         name: data.name || "",
         price: String(data.price ?? ""),
         category: data.category || "鞋類",
+        snack_type: data.snack_type || "餅乾",
         size: data.size || "",
         stock: String(data.stock ?? ""),
         image: data.image || "",
@@ -82,6 +88,10 @@ export default function EditProductPage() {
         );
       }
 
+      const { data: galleryData, error: galleryError } = await supabase.from("product_images").select("id, image_url, sort_order").eq("product_id", id).order("sort_order", { ascending: true });
+      if (galleryError) console.error("讀取穿搭圖失敗：", galleryError);
+      else setGalleryImages(galleryData || []);
+
       setLoading(false);
     };
 
@@ -99,6 +109,61 @@ export default function EditProductPage() {
     setImagePreview(previewUrl);
     return () => URL.revokeObjectURL(previewUrl);
   }, [imageFile]);
+
+  useEffect(() => {
+    const urls = galleryFiles.map((file) => URL.createObjectURL(file));
+    setGalleryPreviews(urls);
+    return () => urls.forEach((url) => URL.revokeObjectURL(url));
+  }, [galleryFiles]);
+
+  const removeGalleryImage = async (image: ProductImage) => {
+    if (!window.confirm("確定要移除這張穿搭圖嗎？")) return;
+    const { error } = await supabase.from("product_images").delete().eq("id", image.id);
+    if (error) return alert(`移除失敗：${error.message}`);
+    setGalleryImages((current) => current.filter((item) => item.id !== image.id));
+  };
+
+  const removeMainImage = async () => {
+    if (!window.confirm("確定要刪除目前主圖嗎？")) return;
+    const replacement = galleryImages[0];
+    const { error } = await supabase.from("products").update({ image: replacement?.image_url || null }).eq("id", id);
+    if (error) return alert(`刪除主圖失敗：${error.message}`);
+    if (replacement) {
+      const { error: removeError } = await supabase.from("product_images").delete().eq("id", replacement.id);
+      if (removeError) return alert(`遞補主圖失敗：${removeError.message}`);
+      setGalleryImages((current) => current.filter((item) => item.id !== replacement.id));
+    }
+    setForm((current) => ({ ...current, image: replacement?.image_url || "" }));
+    setImageFile(null);
+  };
+
+  const makePrimaryImage = async (image: ProductImage) => {
+    const oldMain = form.image;
+    const { error: productError } = await supabase.from("products").update({ image: image.image_url }).eq("id", id);
+    if (productError) return alert(`設定主圖失敗：${productError.message}`);
+    if (oldMain) {
+      const { error } = await supabase.from("product_images").update({ image_url: oldMain }).eq("id", image.id);
+      if (error) return alert(`交換圖片失敗：${error.message}`);
+      setGalleryImages((current) => current.map((item) => item.id === image.id ? { ...item, image_url: oldMain } : item));
+    } else {
+      const { error } = await supabase.from("product_images").delete().eq("id", image.id);
+      if (error) return alert(`設定主圖失敗：${error.message}`);
+      setGalleryImages((current) => current.filter((item) => item.id !== image.id));
+    }
+    setForm((current) => ({ ...current, image: image.image_url }));
+  };
+
+  const moveGalleryImage = async (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= galleryImages.length) return;
+    const reordered = [...galleryImages];
+    [reordered[index], reordered[targetIndex]] = [reordered[targetIndex], reordered[index]];
+    const normalized = reordered.map((image, imageIndex) => ({ ...image, sort_order: imageIndex }));
+    setGalleryImages(normalized);
+    const results = await Promise.all(normalized.map((image) => supabase.from("product_images").update({ sort_order: image.sort_order }).eq("id", image.id)));
+    const failed = results.find((result) => result.error);
+    if (failed?.error) alert(`調整順序失敗：${failed.error.message}`);
+  };
 
   const handleSave = async () => {
   if (
@@ -142,6 +207,7 @@ export default function EditProductPage() {
       name: form.name,
       price: Number(form.price),
       category: form.category,
+      snack_type: form.category === "韓國零食" ? form.snack_type : null,
       size: form.size,
       stock: Number(form.stock),
       image: imageUrl,
@@ -162,46 +228,53 @@ export default function EditProductPage() {
     return;
   }
 
-  const { error: deleteVariantsError } = await supabase
+  const { data: storedVariants, error: storedVariantsError } = await supabase
     .from("product_variants")
-    .delete()
+    .select("id")
     .eq("product_id", id);
 
-  if (deleteVariantsError) {
-    console.error("Supabase product_variants delete error:", {
-      error: deleteVariantsError,
-      message: deleteVariantsError.message,
-      details: deleteVariantsError.details,
-      hint: deleteVariantsError.hint,
-      code: deleteVariantsError.code,
-    });
-    alert(`商品規格刪除失敗：${deleteVariantsError.message}`);
+  if (storedVariantsError) {
     setSaving(false);
-    return;
+    return alert(`讀取原有商品規格失敗：${storedVariantsError.message}`);
+  }
+
+  const keptIds = variants.flatMap((variant) => variant.id ? [variant.id] : []);
+  const removedIds = (storedVariants || []).map((variant) => variant.id).filter((variantId) => !keptIds.includes(variantId));
+
+  // 歷史訂單會保留規格 ID，因此移除規格時只歸零，不實際刪除資料。
+  if (removedIds.length) {
+    const { error: retireError } = await supabase.from("product_variants").update({ stock: 0 }).in("id", removedIds);
+    if (retireError) {
+      setSaving(false);
+      return alert(`停用舊商品規格失敗：${retireError.message}`);
+    }
   }
 
   if (form.category === "服飾") {
-    const { error: variantsError } = await supabase.from("product_variants").insert(
-      variants.map((variant) => ({
-        product_id: id,
-        color: variant.color.trim(),
-        size: variant.size.trim(),
-        stock: Number(variant.stock),
-      }))
-    );
-
-    if (variantsError) {
-      console.error("Supabase product_variants insert error:", {
-        error: variantsError,
-        message: variantsError.message,
-        details: variantsError.details,
-        hint: variantsError.hint,
-        code: variantsError.code,
-      });
-      alert(`商品規格新增失敗：${variantsError.message}`);
-      setSaving(false);
-      return;
+    for (const variant of variants) {
+      const values = { product_id: id, color: variant.color.trim(), size: variant.size.trim(), stock: Number(variant.stock) };
+      const result = variant.id
+        ? await supabase.from("product_variants").update(values).eq("id", variant.id).eq("product_id", id)
+        : await supabase.from("product_variants").insert(values);
+      if (result.error) {
+        setSaving(false);
+        return alert(`商品規格儲存失敗：${result.error.message}`);
+      }
     }
+  }
+
+  if (galleryFiles.length) {
+    const newImages: { product_id: number; image_url: string; sort_order: number }[] = [];
+    for (const [index, file] of galleryFiles.entries()) {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `gallery-${id}-${Date.now()}-${index}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage.from("product-images").upload(fileName, file);
+      if (uploadError) { setSaving(false); return alert(`穿搭圖上傳失敗：${uploadError.message}`); }
+      const { data } = supabase.storage.from("product-images").getPublicUrl(fileName);
+      newImages.push({ product_id: id, image_url: data.publicUrl, sort_order: galleryImages.length + index });
+    }
+    const { error: galleryInsertError } = await supabase.from("product_images").insert(newImages);
+    if (galleryInsertError) { setSaving(false); return alert(`穿搭圖儲存失敗：${galleryInsertError.message}`); }
   }
 
   setSaving(false);
@@ -236,6 +309,7 @@ export default function EditProductPage() {
             <h2 className="mt-2 break-words text-xl font-bold">{form.name}</h2>
             <p className="mt-2 text-sm text-zinc-500">{form.category} · 商品 ID {id}</p>
             {imageFile && <p className="mt-3 text-sm font-bold text-emerald-400">新圖片預覽 · 儲存後才會正式更換</p>}
+            {(form.image || imageFile) && <button type="button" onClick={removeMainImage} className="mt-4 rounded-lg border border-red-500/50 px-4 py-2 text-sm font-bold text-red-400">刪除目前主圖</button>}
           </div>
         </div>
 
@@ -263,6 +337,7 @@ export default function EditProductPage() {
             >
               <option value="鞋類">鞋類</option>
               <option value="服飾">服飾</option>
+              <option value="韓國零食">韓國零食</option>
               <option value="其他">其他</option>
             </select>
           </div>
@@ -285,11 +360,12 @@ export default function EditProductPage() {
           <div className="grid gap-5 md:grid-cols-2">
             <div>
               <label className="mb-2 block text-sm text-zinc-300">
-                尺寸
+                {form.category === "韓國零食" ? "規格／容量" : "尺寸"}
               </label>
               <input
                 type="text"
                 value={form.size}
+                placeholder={form.category === "韓國零食" ? "例如：55g／3包入" : "例如：US 9"}
                 onChange={(e) =>
                   setForm({ ...form, size: e.target.value })
                 }
@@ -386,6 +462,14 @@ export default function EditProductPage() {
     </p>
   )}
 </div>
+
+          <div className="rounded-xl border border-white/10 bg-[#1a1a1a] p-5">
+            <div><h2 className="font-bold">穿搭圖／更多商品圖片</h2><p className="mt-1 text-sm text-zinc-500">可一次選擇多張；儲存後會顯示在商品頁主圖下方。</p></div>
+            {(galleryImages.length > 0 || galleryPreviews.length > 0) && <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">{galleryImages.map((image,index)=><div key={image.id} className="overflow-hidden rounded-xl border border-white/10 bg-white"><img src={image.image_url} alt={`副圖 ${index+1}`} className="aspect-square w-full object-contain"/><div className="grid grid-cols-2 gap-1 bg-[#111] p-2"><button type="button" onClick={()=>makePrimaryImage(image)} className="col-span-2 rounded bg-orange-600 px-2 py-2 text-xs font-bold text-white">設為主圖</button><button type="button" disabled={index===0} onClick={()=>moveGalleryImage(index,-1)} className="rounded border border-white/20 px-2 py-2 text-xs font-bold disabled:opacity-25">← 前移</button><button type="button" disabled={index===galleryImages.length-1} onClick={()=>moveGalleryImage(index,1)} className="rounded border border-white/20 px-2 py-2 text-xs font-bold disabled:opacity-25">後移 →</button><button type="button" onClick={()=>removeGalleryImage(image)} className="col-span-2 rounded border border-red-500/50 px-2 py-2 text-xs font-bold text-red-400">刪除圖片</button></div></div>)}{galleryPreviews.map((url,index)=><div key={url} className="overflow-hidden rounded-xl border border-emerald-500/40 bg-white"><img src={url} alt={`新穿搭圖 ${index+1}`} className="aspect-square w-full object-contain"/><p className="bg-emerald-600 px-2 py-1 text-center text-xs font-bold">待儲存</p></div>)}</div>}
+            <input type="file" accept="image/*" multiple onChange={(event)=>setGalleryFiles(Array.from(event.target.files || []))} className="mt-4 w-full rounded-xl border border-white/10 bg-[#111] px-4 py-3"/>
+          </div>
+
+          {form.category === "韓國零食" && <div><label className="mb-2 block text-sm text-zinc-300">零食分類</label><select value={form.snack_type} onChange={(e)=>setForm({...form,snack_type:e.target.value})} className="w-full rounded-xl border border-white/10 bg-[#1a1a1a] px-4 py-3 outline-none"><option value="餅乾">餅乾</option><option value="泡麵">泡麵</option><option value="飲料">飲料</option><option value="其他">其他</option></select></div>}
 
           <div>
             <label className="mb-2 block text-sm text-zinc-300">

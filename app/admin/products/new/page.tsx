@@ -17,6 +17,7 @@ export default function NewProductPage() {
     name: "",
     price: "",
     category: "鞋類",
+    snack_type: "餅乾",
     size: "",
     stock: "",
     image: "",
@@ -71,6 +72,7 @@ export default function NewProductPage() {
         name: form.name,
         price: Number(form.price),
         category: form.category,
+        snack_type: form.category === "韓國零食" ? form.snack_type : null,
         size: form.size,
         stock: Number(form.stock),
         image: imageUrl,
@@ -127,6 +129,7 @@ export default function NewProductPage() {
       name: "",
       price: "",
       category: "鞋類",
+      snack_type: "餅乾",
       size: "",
       stock: "",
       image: "",
@@ -159,6 +162,8 @@ export default function NewProductPage() {
             />
           </div>
 
+          {form.category === "韓國零食" && <div><label className="mb-2 block text-sm text-zinc-300">零食分類</label><select value={form.snack_type} onChange={(e)=>setForm({...form,snack_type:e.target.value})} className="w-full rounded-xl border border-white/10 bg-[#1a1a1a] px-4 py-3 outline-none"><option value="餅乾">餅乾</option><option value="泡麵">泡麵</option><option value="飲料">飲料</option><option value="其他">其他</option></select></div>}
+
           <div>
             <label className="mb-2 block text-sm text-zinc-300">
               商品類別
@@ -170,6 +175,7 @@ export default function NewProductPage() {
             >
               <option value="鞋類">鞋類</option>
               <option value="服飾">服飾</option>
+              <option value="韓國零食">韓國零食</option>
               <option value="其他">其他</option>
             </select>
           </div>
@@ -193,7 +199,7 @@ export default function NewProductPage() {
           <div className="grid gap-5 md:grid-cols-2">
             <div>
               <label className="mb-2 block text-sm text-zinc-300">
-                尺寸
+                {form.category === "韓國零食" ? "規格／容量" : "尺寸"}
               </label>
               <input
                 type="text"
@@ -202,7 +208,7 @@ export default function NewProductPage() {
                   setForm({ ...form, size: e.target.value })
                 }
                 className="w-full rounded-xl border border-white/10 bg-[#1a1a1a] px-4 py-3 outline-none"
-                placeholder="例如：US 9"
+                placeholder={form.category === "韓國零食" ? "例如：55g／3包入" : "例如：US 9"}
               />
             </div>
 
@@ -307,7 +313,7 @@ export default function NewProductPage() {
                 setForm({ ...form, description: e.target.value })
               }
               className="min-h-32 w-full rounded-xl border border-white/10 bg-[#1a1a1a] px-4 py-3 outline-none"
-              placeholder="輸入商品狀況、尺寸、品牌等資訊"
+              placeholder={form.category === "韓國零食" ? "輸入口味、內容量、產地、有效期限等資訊" : "輸入商品狀況、尺寸、品牌等資訊"}
             />
           </div>
 
