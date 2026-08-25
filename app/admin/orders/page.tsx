@@ -36,13 +36,13 @@ export default function OrdersPage() {
   const updateStatus = async (order: Order) => {
     const nextStatus = draftStatuses[order.id] || order.status;
     if (nextStatus === order.status) return alert("訂單狀態沒有變更。");
-    if (nextStatus === "取消" && !window.confirm(`確定要取消訂單 ${order.order_number} 嗎？\n取消後會移到「已取消訂單」。`)) return;
+    if (nextStatus === "取消" && !window.confirm(`確定要取消訂單 ${order.order_number} 嗎？\n取消後會移到「已取消訂單」，商品庫存會自動補回。`)) return;
     setSaving(order.id);
     const { error } = await supabase.from("orders").update({ status:nextStatus, updated_at:new Date().toISOString() }).eq("id", order.id);
     setSaving("");
     if (error) return alert(`更新失敗：${error.message}`);
     setOrders((current) => current.map((item) => item.id === order.id ? { ...item, status:nextStatus } : item));
-    alert(nextStatus === "取消" ? "訂單已取消，並移至已取消訂單。" : `訂單狀態已更新為「${nextStatus}」。`);
+    alert(nextStatus === "取消" ? "訂單已取消、庫存已補回，並移至已取消訂單。" : `訂單狀態已更新為「${nextStatus}」。`);
   };
 
   const deletionInfo = (order: Order) => {
