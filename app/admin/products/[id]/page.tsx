@@ -18,6 +18,7 @@ export default function EditProductPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState("");
 
   const [form, setForm] = useState({
     name: "",
@@ -88,6 +89,16 @@ export default function EditProductPage() {
       fetchProduct();
     }
   }, [id]);
+
+  useEffect(() => {
+    if (!imageFile) {
+      setImagePreview("");
+      return;
+    }
+    const previewUrl = URL.createObjectURL(imageFile);
+    setImagePreview(previewUrl);
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [imageFile]);
 
   const handleSave = async () => {
   if (
@@ -211,6 +222,22 @@ export default function EditProductPage() {
     <main className="min-h-screen bg-[#111111] px-6 py-12 text-white">
       <div className="mx-auto max-w-2xl">
         <h1 className="mb-8 text-3xl font-bold">編輯商品</h1>
+
+        <div className="mb-8 grid gap-5 rounded-2xl border border-white/10 bg-[#1a1a1a] p-5 sm:grid-cols-[180px_1fr] sm:items-center">
+          <div className="relative aspect-square overflow-hidden rounded-xl border border-white/15 bg-white">
+            {imagePreview || form.image ? (
+              <img src={imagePreview || form.image} alt={form.name || "商品圖片"} className="h-full w-full object-contain p-2" />
+            ) : (
+              <div className="grid h-full place-items-center text-sm font-bold text-zinc-500">尚無商品圖片</div>
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-bold tracking-[.2em] text-orange-400">目前編輯商品</p>
+            <h2 className="mt-2 break-words text-xl font-bold">{form.name}</h2>
+            <p className="mt-2 text-sm text-zinc-500">{form.category} · 商品 ID {id}</p>
+            {imageFile && <p className="mt-3 text-sm font-bold text-emerald-400">新圖片預覽 · 儲存後才會正式更換</p>}
+          </div>
+        </div>
 
         <div className="space-y-5">
           <div>

@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
+import OrderAlert from "./components/order-alert";
+import StockAlert from "./components/stock-alert";
 
 export default function AdminLayout({
   children,
@@ -77,12 +79,7 @@ export default function AdminLayout({
           </a>
 
           <div className="flex items-center gap-4">
-            <a
-              href="/admin/products"
-              className="text-sm text-zinc-400 hover:text-white"
-            >
-              商品
-            </a>
+            <StockAlert />
 
             <a
               href="/admin/bookings"
@@ -91,7 +88,7 @@ export default function AdminLayout({
               預約
             </a>
 
-            <a href="/admin/orders" className="text-sm text-zinc-400 hover:text-white">訂單</a>
+            <OrderAlert />
 
             <button
               type="button"
