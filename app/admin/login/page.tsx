@@ -16,7 +16,7 @@ export default function AdminLoginPage() {
 
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -26,6 +26,13 @@ export default function AdminLoginPage() {
     if (error) {
       console.error(error);
       alert("登入失敗，請確認 Email 或密碼");
+      return;
+    }
+
+    const { data: profile } = await supabase.from("member_profiles").select("role").eq("id", data.user.id).single();
+    if (profile?.role !== "admin") {
+      await supabase.auth.signOut();
+      alert("這個帳號是一般會員，沒有後台管理權限。");
       return;
     }
 

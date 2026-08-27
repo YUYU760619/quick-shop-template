@@ -33,6 +33,13 @@ export default function AdminLayout({
         return;
       }
 
+      const { data: profile } = await supabase.from("member_profiles").select("role").eq("id", session.user.id).single();
+      if (profile?.role !== "admin") {
+        await supabase.auth.signOut();
+        router.replace("/admin/login?unauthorized=1");
+        return;
+      }
+
       setChecking(false);
     };
 
@@ -80,6 +87,10 @@ export default function AdminLayout({
 
           <div className="flex items-center gap-4">
             <StockAlert />
+
+            <a href="/admin/members" className="text-sm text-zinc-400 hover:text-white">
+              會員
+            </a>
 
             <a
               href="/admin/bookings"

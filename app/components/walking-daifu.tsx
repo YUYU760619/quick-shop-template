@@ -49,7 +49,8 @@ export default function WalkingDaifu() {
     return () => clearInterval(timer);
   }, [moving, paused]);
 
-  if (pathname.startsWith("/admin")) return null;
+  // Keep forms and account controls clear; the mascot stays on browsing pages.
+  if (pathname.startsWith("/admin") || pathname.startsWith("/account") || pathname === "/checkout") return null;
   const frames = moving ? walkFrames : idleFrames;
   const frame = paused ? 4 : frames[frameIndex % frames.length];
 
