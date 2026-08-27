@@ -35,6 +35,7 @@ export default function EditProductPage() {
     description: "",
   });
   const [variants, setVariants] = useState<Variant[]>([]);
+  const usesVariants = form.category === "服飾" || form.category === "鞋類";
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -167,10 +168,10 @@ export default function EditProductPage() {
 
   const handleSave = async () => {
   if (
-    form.category === "服飾" &&
+    usesVariants &&
     (variants.length === 0 || variants.some((variant) => !variant.color || !variant.size || variant.stock === ""))
   ) {
-    alert("請完整填寫每個服飾規格的顏色、尺寸與庫存");
+    alert("請完整填寫每個商品規格的顏色、尺寸與庫存");
     return;
   }
 
@@ -208,8 +209,8 @@ export default function EditProductPage() {
       price: Number(form.price),
       category: form.category,
       snack_type: form.category === "韓國零食" ? form.snack_type : null,
-      size: form.size,
-      stock: Number(form.stock),
+      size: usesVariants ? "" : form.size,
+      stock: usesVariants ? variants.reduce((sum, variant) => sum + Number(variant.stock || 0), 0) : Number(form.stock),
       image: imageUrl,
       description: form.description,
     })
@@ -250,7 +251,7 @@ export default function EditProductPage() {
     }
   }
 
-  if (form.category === "服飾") {
+  if (usesVariants) {
     for (const variant of variants) {
       const values = { product_id: id, color: variant.color.trim(), size: variant.size.trim(), stock: Number(variant.stock) };
       const result = variant.id
@@ -356,7 +357,7 @@ export default function EditProductPage() {
             />
           </div>
 
-          {form.category !== "服飾" && (
+          {!usesVariants && (
           <div className="grid gap-5 md:grid-cols-2">
             <div>
               <label className="mb-2 block text-sm text-zinc-300">
@@ -390,11 +391,11 @@ export default function EditProductPage() {
           </div>
           )}
 
-          {form.category === "服飾" && (
+          {usesVariants && (
             <div className="space-y-4 rounded-xl border border-white/10 bg-[#1a1a1a] p-5">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <h2 className="font-bold">服飾規格</h2>
+                  <h2 className="font-bold">{form.category}規格</h2>
                   <p className="mt-1 text-sm text-zinc-500">每個顏色與尺寸組合各自設定庫存。</p>
                 </div>
                 <button
@@ -416,7 +417,7 @@ export default function EditProductPage() {
                   />
                   <input
                     type="text"
-                    placeholder="尺寸，例如：M、XL"
+                    placeholder={form.category === "鞋類" ? "尺寸，例如：US 9.5" : "尺寸，例如：M、XL"}
                     value={variant.size}
                     onChange={(e) => setVariants(variants.map((item, itemIndex) => itemIndex === index ? { ...item, size: e.target.value } : item))}
                     className="min-w-0 w-full rounded-xl border border-white/10 bg-[#111111] px-4 py-3 outline-none"
